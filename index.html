@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pension Eligibility</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn-custom {
+            background-color: #ff5a5f;
+            color: white;
+            border-radius: 50px;
+        }
+        .btn-custom:hover {
+            background-color: #e64c4f;
+        }
+        .card-title {
+            color: #ff5a5f;
+        }
+        .list-group-item {
+            border: none;
+            padding-left: 0;
+        }
+        #message {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .modal-body-green {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .modal-body-red {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title text-center">Add Person</h2>
+                <input type="text" class="form-control mb-3" id="name" placeholder="Name">
+                <input type="number" class="form-control mb-3" id="age" placeholder="Age">
+                <button onclick="addPerson()" class="btn btn-custom btn-block">Add Person</button>
+                <div id="message" class="text-center"></div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-body">
+                <h2 class="card-title text-center">Persons List</h2>
+                <button onclick="getPersons()" class="btn btn-custom btn-block mb-3">Refresh List</button>
+                <ul id="person-list" class="list-group"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="resultModal" tabindex="-1" role="dialog" aria-labelledby="resultModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="resultModalLabel">Pension Eligibility</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="resultMessage"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        async function addPerson() {
+            const name = document.getElementById('name').value;
+            const age = document.getElementById('age').value;
+            const response = await fetch('/add_person', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, age })
+            });
+            const result = await response.json();
+
+            // Determine the background color based on age
+            const modalBody = document.getElementById('resultMessage');
+            if (age >= 60) {
+                modalBody.className = 'modal-body modal-body-green';
+                modalBody.innerText = `Person added successfully. Pension status: Eligible`;
+            } else {
+                modalBody.className = 'modal-body modal-body-red';
+                modalBody.innerText = `Person added successfully. Pension status: Not eligible`;
+            }
+
+            // Show the modal
+            $('#resultModal').modal('show');
+
+            // Reset form and refresh the list after closing the modal
+            $('#resultModal').on('hidden.bs.modal', function () {
+                resetForm();
+                getPersons();
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('name').value = '';
+            document.getElementById('age').value = '';
+            document.getElementById('message').innerText = '';
+        }
+
+        async function getPersons() {
+            const response = await fetch('/persons');
+            const persons = await response.json();
+            const personList = document.getElementById('person-list');
+            personList.innerHTML = '';
+            persons.forEach(person => {
+                const li = document.createElement('li');
+                li.textContent = `${person.name}, Age: ${person.age}, Pension status: ${person.age >= 60 ? 'Eligible' : 'Not eligible'}`;
+                li.classList.add('list-group-item');
+                personList.appendChild(li);
+            });
+        }
+
+        // Initial call to populate the list when the page loads
+        getPersons();
+    </script>
+</body>
+</html>
